@@ -109,12 +109,17 @@ if TYPE_CHECKING:
     from pyrit.models.results.strategy_result import StrategyResult, StrategyResultT
     from pyrit.models.retry_event import RetryEvent
     from pyrit.models.scenario_progress import (
+        ADAPTIVE_ATTEMPT_LABEL,
+        ADAPTIVE_TECHNIQUE_ID_LABEL,
+        ADAPTIVE_TECHNIQUE_NAME_LABEL,
         SCENARIO_RUN_PLAN_METADATA_KEY,
         SCENARIO_RUN_PLAN_VERSION,
         SCENARIO_RUN_STARTED_AT_METADATA_KEY,
+        SEQUENTIAL_ATTACK_CLASS_NAME,
         ScenarioAttackResultDelta,
         ScenarioProgressHeader,
         ScenarioProgressResult,
+        ScenarioProgressResultKind,
         ScenarioQueueEntry,
         ScenarioQueueSnapshot,
         ScenarioRunPlan,
@@ -122,6 +127,7 @@ if TYPE_CHECKING:
         ScenarioRunPlanGroupKind,
         ScenarioRunPlanSeedGroup,
         ScenarioRunProgress,
+        is_sequential_attack_envelope,
     )
     from pyrit.models.score import (
         Condition,
@@ -171,6 +177,9 @@ if TYPE_CHECKING:
     )
 
 _LAZY_EXPORTS: dict[str, str] = {
+    "ADAPTIVE_ATTEMPT_LABEL": "pyrit.models.scenario_progress",
+    "ADAPTIVE_TECHNIQUE_ID_LABEL": "pyrit.models.scenario_progress",
+    "ADAPTIVE_TECHNIQUE_NAME_LABEL": "pyrit.models.scenario_progress",
     "ALLOWED_CHAT_MESSAGE_ROLES": "pyrit.models.messages.chat_message",
     "AdditionalInitializer": "pyrit.models.additional_initializer",
     "AtomicAttackEvaluationIdentifier": "pyrit.models.identifiers",
@@ -271,9 +280,11 @@ _LAZY_EXPORTS: dict[str, str] = {
     "SCENARIO_RUN_PLAN_METADATA_KEY": "pyrit.models.scenario_progress",
     "SCENARIO_RUN_PLAN_VERSION": "pyrit.models.scenario_progress",
     "SCENARIO_RUN_STARTED_AT_METADATA_KEY": "pyrit.models.scenario_progress",
+    "SEQUENTIAL_ATTACK_CLASS_NAME": "pyrit.models.scenario_progress",
     "ScenarioAttackResultDelta": "pyrit.models.scenario_progress",
     "ScenarioProgressHeader": "pyrit.models.scenario_progress",
     "ScenarioProgressResult": "pyrit.models.scenario_progress",
+    "ScenarioProgressResultKind": "pyrit.models.scenario_progress",
     "ScenarioQueueEntry": "pyrit.models.scenario_progress",
     "ScenarioQueueSnapshot": "pyrit.models.scenario_progress",
     "ScenarioRunPlan": "pyrit.models.scenario_progress",
@@ -281,6 +292,7 @@ _LAZY_EXPORTS: dict[str, str] = {
     "ScenarioRunPlanGroupKind": "pyrit.models.scenario_progress",
     "ScenarioRunPlanSeedGroup": "pyrit.models.scenario_progress",
     "ScenarioRunProgress": "pyrit.models.scenario_progress",
+    "is_sequential_attack_envelope": "pyrit.models.scenario_progress",
     "Seed": "pyrit.models.seeds",
     "AttackSeedGroup": "pyrit.models.seeds",
     "AttackTechniqueSeedGroup": "pyrit.models.seeds",
