@@ -47,9 +47,13 @@ from pyrit.models import (
     ScenarioRunPlanGroupKind,
     ScenarioRunPlanSeedGroup,
     ScenarioRunSizeComponent,
-    ScenarioRunSizeEstimate,
     ScenarioRunState,
     config_hash,
+)
+from pyrit.models.catalog import (
+    ScenarioDefaultRunSizeEstimate,
+    ScenarioRunSizeEstimateStatus,
+    ScenarioRunSizeFactor,
 )
 from pyrit.models.parameter import ComponentType, Parameter, RegistryReference
 from pyrit.prompt_target import PromptTarget
@@ -585,7 +589,7 @@ class Scenario(ABC):
         return self._technique_class.resolve(scenario_techniques, default=self._default_technique)
 
     @final
-    async def get_default_run_size_estimate_async(self) -> ScenarioRunSizeEstimate:
+    async def get_default_run_size_estimate_async(self) -> ScenarioDefaultRunSizeEstimate:
         """
         Estimate the scenario's default planned execution units without starting a run.
 
@@ -599,7 +603,9 @@ class Scenario(ABC):
         return await self.get_run_size_estimate_async(target_is_configured=False)
 
     @final
-    async def get_run_size_estimate_async(self, *, target_is_configured: bool = False) -> ScenarioRunSizeEstimate:
+    async def get_run_size_estimate_async(
+        self, *, target_is_configured: bool = False
+    ) -> ScenarioDefaultRunSizeEstimate:
         """
         Estimate the currently configured run without creating or persisting it.
 
@@ -619,7 +625,7 @@ class Scenario(ABC):
         self._estimate_target_is_configured = self._objective_target is not None
         return await self._estimate_run_size_async()
 
-    async def _estimate_run_size_async(self) -> ScenarioRunSizeEstimate:
+    async def _estimate_run_size_async(self) -> ScenarioDefaultRunSizeEstimate:
         """
         Estimate a standard technique-by-seed-group scenario.
 
@@ -640,6 +646,7 @@ class Scenario(ABC):
                 ScenarioRunSizeComponent(
                     label="Baseline",
                     count=seed_group_count,
+                    factors=[ScenarioRunSizeFactor(label="selected logical seed groups", count=seed_group_count)],
                     is_baseline=True,
                     note="One unmodified prompt-sending unit per selected seed group.",
                 )
@@ -665,8 +672,14 @@ class Scenario(ABC):
                 else:
                     estimated_attack_count = None
                     note += " The range covers every compatibility mix that the randomized per-dataset caps can select."
-        return ScenarioRunSizeEstimate(
-            estimated_attack_count=estimated_attack_count,
+        status = (
+            ScenarioRunSizeEstimateStatus.Exact
+            if estimated_attack_count is not None
+            else ScenarioRunSizeEstimateStatus.Conditional
+        )
+        return ScenarioDefaultRunSizeEstimate(
+            status=status,
+            total_attack_count=estimated_attack_count,
             minimum_attack_count=minimum_attack_count,
             maximum_attack_count=maximum_attack_count,
             components=components,
@@ -692,6 +705,10 @@ class Scenario(ABC):
                 ScenarioRunSizeComponent(
                     label="Default technique sweep",
                     count=seed_group_count * technique_count,
+                    factors=[
+                        ScenarioRunSizeFactor(label="selected logical seed groups", count=seed_group_count),
+                        ScenarioRunSizeFactor(label="default concrete techniques", count=technique_count),
+                    ],
                 )
             ]
 
@@ -717,6 +734,10 @@ class Scenario(ABC):
                 ScenarioRunSizeComponent(
                     label=technique.value,
                     count=compatible_count,
+                    factors=[
+                        ScenarioRunSizeFactor(label="selected concrete techniques", count=1),
+                        ScenarioRunSizeFactor(label="compatible logical seed groups", count=compatible_count),
+                    ],
                 )
             )
         return components
