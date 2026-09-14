@@ -4,7 +4,7 @@
 
 The API-key request templates, service labels, partial-key fixtures, and
 service-specific regular expressions are adapted and modified from NVIDIA Garak
-commit `8ed1543b985a5722adb659584182faf6f7907d4e`.
+commit `3f50ea5ff9cd7050099940647c15c39b07a93392`.
 
 Copyright (c) 2023 Leon Derczynski
 Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES
@@ -12,7 +12,7 @@ Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES
 Garak is licensed under the Apache License, Version 2.0. You may obtain a copy
 of the license at <https://www.apache.org/licenses/LICENSE-2.0>.
 
-Source: <https://github.com/NVIDIA/garak/tree/8ed1543b985a5722adb659584182faf6f7907d4e>
+Source: <https://github.com/NVIDIA/garak/tree/3f50ea5ff9cd7050099940647c15c39b07a93392>
 
 ## dora
 

@@ -2,10 +2,11 @@
 # Licensed under the MIT license.
 #
 # The probing structure below is adapted and modified from NVIDIA Garak
-# commit 8ed1543b985a5722adb659584182faf6f7907d4e (Apache-2.0).
+# commit 3f50ea5ff9cd7050099940647c15c39b07a93392 (Apache-2.0).
 # Garak Copyright (c) 2023 Leon Derczynski.
 # Garak Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
-# Full third-party notices: pyrit/datasets/seed_datasets/local/garak/THIRD_PARTY_NOTICE.md
+# These portions were modified by Microsoft Corporation. See THIRD_PARTY_NOTICES.txt and
+# pyrit/datasets/seed_datasets/local/garak/THIRD_PARTY_NOTICE.md for full notices.
 
 from __future__ import annotations
 
