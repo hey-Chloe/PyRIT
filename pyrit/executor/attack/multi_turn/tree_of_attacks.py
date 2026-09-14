@@ -804,12 +804,11 @@ class _TreeOfAttacksNode:
         and any auxiliary scorers (which provide additional metrics). The scoring results are
         used by the TAP algorithm to decide which branches to explore further.
 
-        Blocked or errored responses are scored via the scorer's unified default behavior:
-        ``TrueFalseScorer`` returns
-        ``Score(False)`` and ``FloatScaleScorer``
-        returns ``Score(0.0)`` whenever no supported pieces remain after validator filtering
-        (the normal outcome for a blocked piece). This keeps blocked branches at the bottom
-        of the priority queue without needing attack-level error mapping.
+        Scorers apply their own unreadable-response policy. A fully blocked response uses the
+        scorer family's neutral fallback unless the scorer overrides it. An unreadable transport
+        or protocol response produces an undetermined score. A response with no supported role
+        or data type makes the scorer return ``[]``, so this method raises ``RuntimeError``. Tree
+        of Attacks does not map these outcomes to ``False`` or ``0.0``.
 
         Args:
             response (Message): The response from the objective target to evaluate.
@@ -841,9 +840,7 @@ class _TreeOfAttacksNode:
                 response=response,
                 objective_scorer=self._objective_scorer,
                 auxiliary_scorers=self._auxiliary_scorers,
-                role_filter="assistant",
                 objective=objective,
-                skip_on_error_result=False,
             )
 
         # Extract objective score
@@ -1657,12 +1654,12 @@ class TreeOfAttacksWithPruningAttack(AttackStrategy[TAPAttackContext, TAPAttackR
             # The default SelfAskScaleScorer only supports text; for targets that output
             # images (or other non-text types), we need a scorer that accepts those types
             # so it can evaluate the response with a multimodal LLM.
-            output_types: set[str] = set()
+            output_types: set[PromptDataType] = set()
             for modality_set in self._objective_target.configuration.capabilities.output_modalities:
                 output_types.update(modality_set)
-            supported_types: list[PromptDataType] = cast(
-                "list[PromptDataType]", sorted(output_types) if output_types else ["text"]
-            )
+            supported_types = sorted(output_types)
+            if not supported_types:
+                supported_types.append("text")
 
             scorer_validator = ScorerPromptValidator(
                 supported_data_types=supported_types,
@@ -2455,7 +2452,7 @@ class TreeOfAttacksWithPruningAttack(AttackStrategy[TAPAttackContext, TAPAttackR
             outcome_reason=outcome_reason,
             executed_turns=context.executed_turns,
             last_response=last_response,
-            last_score=context.best_objective_score,
+            automated_score=context.best_objective_score,
             related_conversations=context.related_conversations,
             labels=context.memory_labels,
         )

@@ -235,7 +235,7 @@ class PromptSendingAttack(SingleTurnAttackStrategy):
             objective=context.objective,
             atomic_attack_identifier=AtomicAttackIdentifier.build(attack_identifier=self.get_identifier()),
             last_response=response.get_piece() if response else None,
-            last_score=score,
+            automated_score=score,
             related_conversations=context.related_conversations,
             outcome=outcome,
             outcome_reason=outcome_reason,
@@ -367,9 +367,7 @@ class PromptSendingAttack(SingleTurnAttackStrategy):
                 response=response,
                 objective_scorer=self._objective_scorer,
                 auxiliary_scorers=self._auxiliary_scorers,
-                role_filter="assistant",
                 objective=objective,
-                skip_on_error_result=True,
             )
 
         if not self._objective_scorer:

@@ -312,7 +312,9 @@ class Scorer(Identifiable, abc.ABC):
             expectation (ScoringExpectation | None): What to look for. Defaults to None.
 
         Returns:
-            list[Score]: A list of Score objects representing the results.
+            list[Score]: Zero or more persisted scores. An empty list means that this scorer
+                does not apply to the evidence. A non-empty list contains completed or
+                undetermined verdicts.
 
         Raises:
             TypeError: If this scorer does not support this kind of scorable.
@@ -328,7 +330,27 @@ class Scorer(Identifiable, abc.ABC):
             raise
         except Exception as e:
             raise RuntimeError(f"Error in scorer {self.__class__.__name__}: {str(e)}") from e
+        self._stamp_scored_expectation(scores=scores, expectation=expectation)
         return await self._validate_and_persist_scores_async(scores=scores)
+
+    @staticmethod
+    def _stamp_scored_expectation(*, scores: list[Score], expectation: ScoringExpectation | None) -> None:
+        """
+        Record on each score the expectation it was judged against.
+
+        The scorer, not the score, knows the expectation it used, so it stamps the finished
+        scores before they persist. ``objective`` is the derived view, so it is refreshed to
+        match. A ``None`` expectation leaves the scores unchanged.
+
+        Args:
+            scores (list[Score]): The scores to stamp.
+            expectation (ScoringExpectation | None): The expectation the scorer used.
+        """
+        if expectation is None:
+            return
+        for score in scores:
+            object.__setattr__(score, "scored_expectation", expectation)
+            object.__setattr__(score, "objective", expectation.objective)
 
     def _validate_expectation(
         self,
@@ -488,8 +510,9 @@ class Scorer(Identifiable, abc.ABC):
         Subclasses implement this for the scorable kinds they handle and raise
         ``TypeError`` for the rest. ``MessageScorer`` handles the message-shaped kinds.
 
-        An implementation returns an empty list when a filter skipped the scorable without
-        scoring it. An empty list bypasses ``validate_return_scores`` and persistence.
+        An implementation returns ``[]`` when this scorer does not apply to the evidence.
+        Otherwise, it returns one or more completed or undetermined ``Score`` results.
+        An empty list bypasses ``validate_return_scores`` and persistence.
 
         Args:
             scorable (Scorable): What to look at.
@@ -621,14 +644,16 @@ class Scorer(Identifiable, abc.ABC):
         response: Message,
         objective_scorer: Scorer | None = None,
         auxiliary_scorers: list[Scorer] | None = None,
-        role_filter: ChatMessageRole = "assistant",
+        role_filter: ChatMessageRole | None = None,
         objective: str | None = None,
-        skip_on_error_result: bool = True,
+        skip_on_error_result: bool | None = None,
     ) -> dict[str, list[Score]]:
         """
         Score a response through the message family. Deprecated.
 
         Response scoring is message-only policy, so it moved to ``MessageScorer``.
+        ``role_filter`` and ``skip_on_error_result`` are deprecated compatibility filters.
+        New code declares the roles it reads on the scorer.
 
         Returns:
             dict[str, list[Score]]: Auxiliary and objective scores, keyed by
@@ -655,12 +680,14 @@ class Scorer(Identifiable, abc.ABC):
         *,
         response: Message,
         scorers: list[Scorer],
-        role_filter: ChatMessageRole = "assistant",
+        role_filter: ChatMessageRole | None = None,
         objective: str | None = None,
-        skip_on_error_result: bool = True,
+        skip_on_error_result: bool | None = None,
     ) -> list[Score]:
         """
         Score a response with several scorers through the message family. Deprecated.
+
+        ``role_filter`` and ``skip_on_error_result`` are deprecated compatibility filters.
 
         Returns:
             list[Score]: Every score the scorers produced.

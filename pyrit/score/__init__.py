@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from pyrit.score.float_scale.system_prompt_extraction_scorer import SystemPromptExtractionScorer
     from pyrit.score.float_scale.video_float_scale_scorer import VideoFloatScaleScorer
     from pyrit.score.message_scorable_resolver import MessageScorableResolver
-    from pyrit.score.message_scorer import MessageScorer, MessageScoringOptions
+    from pyrit.score.message_scorer import MessageScorer
     from pyrit.score.response_handler import CallableResponseHandler, JsonSchemaResponseHandler, ResponseHandler
     from pyrit.score.scorable import ContentScorable, MessageScorable, Scorable
     from pyrit.score.scorer import Scorer
@@ -80,6 +80,7 @@ if TYPE_CHECKING:
         LlamaGuardScorer,
         render_llamaguard_prompt,
     )
+    from pyrit.score.true_false.manual_scorer import ManualScorer
     from pyrit.score.true_false.prompt_shield_scorer import PromptShieldScorer
     from pyrit.score.true_false.question_answer_scorer import QuestionAnswerScorer
     from pyrit.score.true_false.regex.anthrax_keyword_scorer import AnthraxKeywordScorer
@@ -173,10 +174,10 @@ _LAZY_EXPORTS: dict[str, str | tuple[str, str | None]] = {
     "LlamaGuardPolicy": "pyrit.score.true_false.llamaguard_policy",
     "LlamaGuardScorer": "pyrit.score.true_false.llamaguard_scorer",
     "MarkdownInjectionScorer": "pyrit.score.true_false.regex.markdown_injection",
+    "ManualScorer": "pyrit.score.true_false.manual_scorer",
     "MessageScorableResolver": "pyrit.score.message_scorable_resolver",
     "MessageScorable": "pyrit.score.scorable",
     "MessageScorer": "pyrit.score.message_scorer",
-    "MessageScoringOptions": "pyrit.score.message_scorer",
     "MethKeywordScorer": "pyrit.score.true_false.regex.meth_keyword_scorer",
     "MetricsType": "pyrit.score.scorer_evaluation.metrics_type",
     "NerveAgentKeywordScorer": "pyrit.score.true_false.regex.nerve_agent_keyword_scorer",

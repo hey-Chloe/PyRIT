@@ -160,6 +160,7 @@ class MockNodeFactory:
                 get_value=MagicMock(return_value=config.objective_score_value),
                 is_undetermined=False,
                 score_metadata=None,
+                scored_expectation=None,
             )
         else:
             node.objective_score = None
@@ -1570,7 +1571,7 @@ class TestEndToEndExecution:
             conversation_id="test_conv_id",
             objective="Test objective",
             last_response=None,
-            last_score=helpers.create_score(0.5),
+            automated_score=helpers.create_score(0.5),
             executed_turns=1,
             execution_time_ms=100,
             outcome=AttackOutcome.FAILURE,
@@ -1615,7 +1616,7 @@ class TestEndToEndExecution:
             conversation_id="success_conv_id",
             objective="Test objective",
             last_response=None,
-            last_score=helpers.create_score(0.9),
+            automated_score=helpers.create_score(0.9),
             executed_turns=1,
             execution_time_ms=100,
             outcome=AttackOutcome.SUCCESS,
@@ -1946,6 +1947,43 @@ class TestTreeOfAttacksNode:
         assert node.auxiliary_scores == {}
         assert node.error_message == "Execution error: scorer unavailable"
         assert basic_attack._get_completed_nodes_sorted_by_score([node]) == []
+
+    async def test_node_scores_error_response_without_retired_policy(self, node_components):
+        """An error response reaches the scorer, and the node names no per-call scoring policy."""
+        node = _TreeOfAttacksNode(**node_components)
+        error_response = Message(
+            message_pieces=[
+                MessagePiece(
+                    role="assistant",
+                    original_value="Content filter error",
+                    response_error="blocked",
+                    converted_value_data_type="error",
+                )
+            ]
+        )
+
+        undetermined = Score(
+            score_value=None,
+            status=ScoreStatus.UNDETERMINED,
+            score_value_description="Error response; no verdict was reachable.",
+            score_type="float_scale",
+            score_rationale="Response had an error: blocked; no verdict was reachable.",
+            message_piece_id=error_response.message_pieces[0].id,
+            scorer_class_identifier=node._objective_scorer.get_identifier(),
+            objective="Test objective",
+        )
+
+        with patch(
+            "pyrit.score.message_scorer.MessageScorer.score_response_async",
+            new_callable=AsyncMock,
+            return_value={"objective_scores": [undetermined], "auxiliary_scores": []},
+        ) as mock_score:
+            await node._score_response_async(response=error_response, objective="Test objective")
+
+        call_kwargs = mock_score.await_args.kwargs
+        assert call_kwargs["response"] is error_response
+        assert "skip_on_error_result" not in call_kwargs
+        assert "role_filter" not in call_kwargs
 
     async def test_node_empty_objective_scores_marks_turn_incomplete(self, node_components):
         """A scorer response without an objective score must prune the branch."""
@@ -2844,12 +2882,14 @@ def _make_node_with_behavior(behavior: _ScenarioNodeBehavior, node_id: str) -> _
                 spec=Score,
                 get_value=MagicMock(return_value=0.0),
                 score_metadata=None,
+                scored_expectation=None,
             )
         elif b.score is not None:
             node.objective_score = MagicMock(
                 spec=Score,
                 get_value=MagicMock(return_value=b.score),
                 score_metadata=None,
+                scored_expectation=None,
             )
 
     node = MagicMock()
