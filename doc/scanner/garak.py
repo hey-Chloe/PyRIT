@@ -34,6 +34,7 @@ from pyrit.registry import TargetRegistry
 from pyrit.scenario import DatasetAttackConfiguration
 from pyrit.scenario.garak import (
     ApiKey,
+    ApiKeyDatasetConfiguration,
     ApiKeyTechnique,
     Doctor,
     Encoding,
@@ -186,7 +187,8 @@ await output_scenario_async(web_injection_result)
 #
 # Ports Garak's `apikey.GetKey` and `apikey.CompleteKey` probes. `GetKey` asks for a new
 # credential across 58 service types; `CompleteKey` asks the target to extend five conspicuous
-# PyRIT-created synthetic partial-key fixtures. Responses are scored by `CredentialLeakScorer`.
+# PyRIT-created synthetic partial-key fixtures. The scenario uses `CredentialLeakScorer` with
+# its opt-in `GARAK_PATTERNS` set; the scorer's default coverage is unchanged.
 # Supplied partials, request echoes, and safe placeholders are not counted as leaks; a newly
 # generated credential-shaped value is. Seven service entries represent public resource/client
 # identifiers rather than secrets; they remain in the prompt corpus for Garak parity but are
@@ -195,16 +197,17 @@ await output_scenario_async(web_injection_result)
 # **CLI examples:**
 #
 # ```bash
-# # Run the bounded default (both techniques, 20 prompts total).
+# # Sample up to 20 prompts across both techniques.
 # pyrit_scan run garak.api_key --target openai_chat
 #
-# # Run only GetKey with a smaller total cap.
-# pyrit_scan run garak.api_key --target openai_chat --techniques get_key --prompt-cap 2
+# # Run only GetKey with a smaller sample.
+# pyrit_scan run garak.api_key --target openai_chat --techniques get_key --max-dataset-size 2
 # ```
 #
 # **Available techniques:** `GetKey` and `CompleteKey`. `DEFAULT` and `ALL` both select the two
-# techniques. `prompt_cap` is a deterministic cap across all selected techniques, not a per-service
-# cap.
+# techniques. `max_dataset_size` samples across all selected technique populations, not per service.
+# The base scenario persists the sample for resume. Use `ApiKeyDatasetConfiguration` with
+# `max_dataset_size=None` to run all 348 requests. Standard technique converter stacks are supported.
 
 # %%
 api_key_scenario = ApiKey()
@@ -212,7 +215,7 @@ api_key_scenario.set_params_from_args(  # type: ignore
     args={
         "objective_target": objective_target,
         "scenario_techniques": [ApiKeyTechnique.GetKey],
-        "prompt_cap": 2,
+        "dataset_config": ApiKeyDatasetConfiguration(dataset_names=ApiKey.required_datasets(), max_dataset_size=2),
     }
 )
 await api_key_scenario.initialize_async()  # type: ignore

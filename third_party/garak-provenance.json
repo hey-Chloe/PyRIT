@@ -51,6 +51,12 @@
       ]
     },
     {
+      "path": "pyrit/datasets/seed_datasets/local/garak/api_key_service_patterns.prompt",
+      "sources": [
+        "garak/resources/apikey/regexes.py"
+      ]
+    },
+    {
       "path": "pyrit/datasets/seed_datasets/local/garak/api_key_services.prompt",
       "sources": [
         "garak/resources/apikey/regexes.py"
