@@ -87,17 +87,6 @@ class TestApiKey:
         assert set(ApiKeyTechnique.expand({ApiKeyTechnique.DEFAULT})) == expected
         assert set(ApiKeyTechnique.expand({ApiKeyTechnique.ALL})) == expected
 
-    async def test_default_samples_twenty_requests(
-        self, mock_objective_target: PromptTarget, corpus_seeds: dict[str, list[Seed]]
-    ) -> None:
-        scenario = ApiKey()
-        await _initialize_async(scenario=scenario, target=mock_objective_target, corpus_seeds=corpus_seeds)
-
-        assert sum(len(attack.seed_groups) for attack in scenario._atomic_attacks) == 20
-        assert all(
-            isinstance(attack.attack_technique.attack, PromptSendingAttack) for attack in scenario._atomic_attacks
-        )
-
     @pytest.mark.parametrize("technique", [ApiKeyTechnique.GetKey, ApiKeyTechnique.CompleteKey])
     async def test_single_technique_uses_entire_sample(
         self, technique: ApiKeyTechnique, mock_objective_target: PromptTarget, corpus_seeds: dict[str, list[Seed]]
@@ -269,6 +258,9 @@ class TestApiKey:
         expected = size or 20
         assert estimate.estimated_attack_count == expected
         assert sum(len(attack.seed_groups) for attack in scenario._atomic_attacks) == expected
+        assert all(
+            isinstance(attack.attack_technique.attack, PromptSendingAttack) for attack in scenario._atomic_attacks
+        )
         assert sum(dataset.logical_seed_group_count for dataset in estimate.datasets) == 348
 
         for dataset in estimate.datasets:

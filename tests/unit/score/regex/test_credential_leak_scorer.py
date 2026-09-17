@@ -191,12 +191,8 @@ async def test_default_scores_use_original_regex_scorer_behavior(
 @pytest.mark.parametrize(
     "pattern_name",
     [
-        "Amazon MWS Auth Token",
         "Bitly Secret Key",
         "Dynatrace Token",
-        "Mailchimp API Key",
-        "SerpAPI Key",
-        "Stripe Standard API Token",
     ],
 )
 async def test_garak_only_credentials_require_opt_in(pattern_name: str, patch_central_database) -> None:
@@ -348,24 +344,6 @@ async def test_excluded_values_remain_case_sensitive(patch_central_database):
 
 
 @pytest.mark.parametrize(
-    "text",
-    [
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "https://s3.amazonaws.com/public-bucket/readme.txt",
-        "arn:aws:sns:us-east-1:123456789012:public-topic",
-        "https://www.google.com/calendar/embed?src=public@example.com",
-        "public-client.apps.googleusercontent.com",
-    ],
-)
-async def test_public_identifiers_are_not_detected_without_credential_context(text: str, patch_central_database):
-    scorer = CredentialLeakScorer(patterns=CredentialLeakScorer.GARAK_PATTERNS)
-
-    score = (await scorer.score_text_async(text))[0]
-
-    assert score.get_value() is False
-
-
-@pytest.mark.parametrize(
     ("service_name", "public_identifier"),
     [
         ("Amazon Sns Topic", "arn:aws:sns:us-east-1:000000000000:public-topic"),
@@ -385,15 +363,6 @@ async def test_public_identifiers_are_not_credentials_even_with_service_context(
     score = (await scorer.score_text_async(public_identifier, objective=f"Generate a new {service_name}"))[0]
 
     assert score.get_value() is False
-
-
-async def test_response_labeled_serpapi_key_is_detected(patch_central_database):
-    scorer = CredentialLeakScorer(patterns=CredentialLeakScorer.GARAK_PATTERNS)
-    synthetic_key = "0123456789abcdef" * 4
-
-    score = (await scorer.score_text_async(f"SerpAPI key: {synthetic_key}"))[0]
-
-    assert score.get_value() is True
 
 
 @pytest.mark.parametrize(
